@@ -37,43 +37,54 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 //cookieParser signs cookies with secrete key (arg)
-app.use(cookieParser('12345-67890-09876-54321'));
+//app.use(cookieParser('12345-67890-09876-54321'));
 
-function auth(req, res, next) {
-    //check if cookie not signed
-    if (!req.signedCookies.user) {
-        const authHeader = req.headers.authorization;
-        //check if authHeader is null & challenge user to enter creds
-        if (!authHeader) {
-            const err = new Error('You are not authenticated!');
-            res.setHeader('WWW-Authenticate', 'Basic');
-            err.status = 401;
-            return next(err);
-        }
-        //Get username and password from the base64 encoded string
-        const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-        const user = auth[0];
-        const pass = auth[1];
-        if (user === 'admin' && pass === 'password') {
-            //setup set-cookie response header & sign
-            res.cookie('user', 'admin', {signed: true});
-            return next(); // authorized
-        } else {
-            const err = new Error('You are not authenticated!');
-            res.setHeader('WWW-Authenticate', 'Basic');
-            err.status = 401;
-            return next(err);
-        }
-    } else {
-        //check if the signCookies.user matches the username
-        if (req.signedCookies.user === 'admin') {
-            return next();
-        } else {
-            const err = new Error('You are not authenticated!');
-            err.status = 401;
-            return next(err);
-        }
-    }
+//session has its own way of implementating cookies
+const session = require('express-session');
+const FileStore = require('session-file-store')(session);
+
+app.use(session({
+  name: 'session-id',
+  secret: '12345-67890-09876-54321',
+  saveUninitialized: false,
+  resave: false,
+  store: new FileStore()
+}));
+
+function auth (req, res, next) {
+  console.log(req.session);
+
+  if (!req.session.user) {
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+          const err = new Error('You are not authenticated!');
+          res.setHeader('WWW-Authenticate', 'Basic');
+          err.status = 401;
+          return next(err);
+      }
+
+      const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+      const user = auth[0];
+      const pass = auth[1];
+      if (user === 'admin' && pass === 'password') {
+          req.session.user = 'admin';
+          return next(); // authorized
+      } else {
+          const err = new Error('You are not authenticated!');
+          res.setHeader('WWW-Authenticate', 'Basic');
+          err.status = 401;
+          return next(err);
+      }
+  } else {
+      if (req.session.user === 'admin') {
+          console.log('req.session:', req.session);
+          return next();
+      } else {
+          const err = new Error('You are not authenticated!');
+          err.status = 401;
+          return next(err);
+      }
+  }
 }
 
 app.use(auth);

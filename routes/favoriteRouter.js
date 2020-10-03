@@ -119,7 +119,7 @@ favoriteRouter.route("/:campsiteId")
     })
     .delete(cors.corsWithOptions, authenticate.verifyUser, (req, res, next) => {
         console.log(`User ID Checking ${req.user._id}`)
-        Favorite.findOne({user:req.user._id})
+        Favorite.findOne({ user: req.user._id })
             .then((favorite) => {
                 if (favorite) {
                     /** User's list of favorites exists but doesn't include the specified campsite */
@@ -138,12 +138,12 @@ favoriteRouter.route("/:campsiteId")
                     } else {
                         /** favorite already exist*/
                         res.statusCode = 200
-                        res.end(`That campsite is ${req.params.campsiteId} doesn't in the list of favorites!`)
+                        res.end(`That campsite: ${req.params.campsiteId} doesn't exist in the list of favorites!`)
                     }
                 } else {
                     /** User's list of favorites doesn't exist yet! */
                     res.statusCode = 200
-                    res.end(`That campsite is ${req.params.campsiteId} has no favorites to delete!`)
+                    res.end(`That campsite: ${req.params.campsiteId} has no favorite to delete!`)
                 }
             })
             .catch((err) => next(err));

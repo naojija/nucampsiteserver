@@ -14,7 +14,8 @@ const userSchema = new Schema({
     admin: {
         type: Boolean,
         default: false
-    }
+    },
+    facebookId: String,
 });
 
 //passport-local-mongoose plugin handles data structure for username and password
